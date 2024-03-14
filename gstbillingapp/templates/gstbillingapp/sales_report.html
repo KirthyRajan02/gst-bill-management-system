@@ -1,0 +1,41 @@
+{% extends "gstbillingapp/base.html" %}
+
+{% block content %}
+
+<h2>Sales Report</h2>
+
+<div class="mb-3">
+    <form method="get">
+        <label for="dateFilter">Filter by Date:</label>
+        <input type="date" id="dateFilter" name="date" value="{{ date_filter }}">
+        <button type="submit" class="btn btn-primary">Filter</button>
+    </form>
+</div>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Customer</th>
+            <th>Product</th>
+            <th>Quantity Sold</th>
+            <th>Price</th>
+            <th>Date Sold</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for sale in sales_data %}
+            <tr>
+                <td>{% if sale.customer_name %}{{ sale.customer_name }}{% endif %}</td>
+                <td>{% if sale.product_name %}{{ sale.product_name }}{% endif %}</td>
+                <td>{% if sale.qty %}{{ sale.qty }}{% endif %}</td>
+                <td>{% if sale.total_amount %}{{ sale.total_amount }}{% endif %}</td>   
+                <td>{% if sale.date %}{{ sale.date }}{% endif %}</td>
+            </tr>
+        {% endfor %}
+    </tbody>    
+</table>
+<button onclick="window.print();" class="btn btn-primary d-print-none d-block mx-auto">Print Sales Report</button>
+
+{% endblock %}
+
+   
