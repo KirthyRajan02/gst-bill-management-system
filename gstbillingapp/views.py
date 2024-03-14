@@ -454,3 +454,69 @@ def book_logs_add(request, book_id):
 def landing_page(request):
     context = {}
     return render(request, 'gstbillingapp/pages/landing_page.html', context)
+
+
+# ========= sales report ==========
+
+from django.shortcuts import render
+from django.db.models import Sum
+from .models import Invoice, InventoryLog
+
+def generate_sales_report(request):
+    # Assuming sales_data is a list of dictionaries containing sales details
+    sales_data = []
+
+    # Get the date parameter from the query string, default to None
+    date_filter = request.GET.get('date', None)
+
+    # Filter invoices based on the provided date
+    invoices = Invoice.objects.filter(books_reflected=True)
+
+    if date_filter:
+        invoices = invoices.filter(invoice_date=date_filter)
+
+    for invoice in invoices:
+        if invoice.invoice_customer:
+            # Initialize sales data with default values
+            sale = {
+                'customer_name': invoice.invoice_customer.customer_name,
+                'product_name': '',
+                'qty': 0,
+                'date': invoice.invoice_date,
+                'total_amount': 0,  # Initialize total amount
+            }
+
+            # Check if invoice_json is a dictionary and contains 'items' key
+            if isinstance(invoice.invoice_json, dict) and 'items' in invoice.invoice_json:
+                items = invoice.invoice_json['items']
+
+                # Ensure items is a list before attempting to access its elements
+                if isinstance(items, list) and items:
+                    # Assuming you're interested in the first item
+                    item = items[0]
+                    sale['product_name'] = item.get('invoice_product', '')
+                    sale['qty'] = item.get('invoice_qty', 0)
+
+            # Fetch data from InventoryLog for the associated_invoice
+            inventory_log_data = InventoryLog.objects.filter(associated_invoice=invoice).values(
+                'product__product_name', 'change', 'date', 'product__product_rate_with_gst'
+            )
+
+            # If there are associated logs, aggregate the quantity sold and calculate total amount
+            if inventory_log_data:
+                total_qty_sold = abs(inventory_log_data.aggregate(total_qty=Sum('change'))['total_qty'])
+                sale['qty'] = total_qty_sold
+                # Fetch the product name from the first log
+                sale['product_name'] = inventory_log_data[0]['product__product_name']
+                # Fetch the product rate from the first log
+                product_rate = inventory_log_data[0]['product__product_rate_with_gst']
+                sale['total_amount'] = total_qty_sold * product_rate
+
+            sales_data.append(sale)
+
+    context = {
+        'sales_data': sales_data,
+        'date_filter': date_filter,
+    }
+    return render(request, 'gstbillingapp/sales_report.html', context)
+
