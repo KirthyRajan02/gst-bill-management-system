@@ -1,7 +1,7 @@
 from django.urls import path
 from django.urls import include
-
-from . import views
+from .views import generate_sales_report
+from . import views  
 
 urlpatterns = [
     path('', views.landing_page, name='landing_page'),
@@ -39,6 +39,7 @@ urlpatterns = [
 
     path('profile', views.user_profile, name='user_profile'),
     path('profile/edit', views.user_profile_edit, name='user_profile_edit'),
+    path('generate_sales_report/', views.generate_sales_report, name='generate_sales_report'),
 
 
 ]
